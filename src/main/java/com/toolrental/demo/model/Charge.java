@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * Represents the daily rental charge for a given type of tool.
+ */
 @Entity
 @Table(name = "charge")
 @Getter

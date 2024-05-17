@@ -52,7 +52,7 @@ class CheckoutServiceTest {
         StringReader input = new StringReader("5\n");
         BufferedReader reader = new BufferedReader(input);
 
-        String result = checkoutService.getValidInput(reader, "Enter a number:", 1, 10);
+        String result = checkoutService.getNumericInput(reader, "Enter a number:", 1, 10);
         Assertions.assertEquals("5", result);
     }
 
@@ -61,7 +61,7 @@ class CheckoutServiceTest {
         StringReader input = new StringReader("15\n");
         BufferedReader reader = new BufferedReader(input);
 
-        String result = checkoutService.getValidInput(reader, "Enter a number:", 1, 10);
+        String result = checkoutService.getNumericInput(reader, "Enter a number:", 1, 10);
         Assertions.assertNull(result);
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
@@ -75,7 +75,7 @@ class CheckoutServiceTest {
         StringReader input = new StringReader("abc\n");
         BufferedReader reader = new BufferedReader(input);
 
-        String result = checkoutService.getValidInput(reader, "Enter a number:", 1, 10);
+        String result = checkoutService.getNumericInput(reader, "Enter a number:", 1, 10);
         Assertions.assertNull(result);
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
@@ -88,7 +88,7 @@ class CheckoutServiceTest {
         StringReader input = new StringReader("exit\n");
         BufferedReader reader = new BufferedReader(input);
 
-        String result = checkoutService.getValidInput(reader, "Enter a number:", 1, 10);
+        String result = checkoutService.getNumericInput(reader, "Enter a number:", 1, 10);
         Assertions.assertNull(result);
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))

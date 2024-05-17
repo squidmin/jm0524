@@ -1,6 +1,6 @@
 # jm0524
 
-Spring Boot CLI application that interacts with a PostgreSQL database.
+Simulation of a Tool Rental Checkout System CLI. Uses Spring Data JPA to interact with a PostgreSQL database.
 
 ## Prerequisites
 

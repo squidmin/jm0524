@@ -42,7 +42,7 @@ public class TestConfig {
 
     @Bean
     public LocalDateUtil localDateUtil() {
-        return new LocalDateUtil(2024); // Use a specific year for testing
+        return new LocalDateUtil();
     }
 
     @Bean

@@ -13,7 +13,7 @@ class LocalDateUtilTest {
 
     @BeforeEach
     void setUp() {
-        localDateUtil = new LocalDateUtil(2024);
+        localDateUtil = new LocalDateUtil();
     }
 
     @Test

@@ -20,14 +20,40 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Service class for handling tool checkout operations.
+ */
 @Service
 public class CheckoutService {
 
+    /**
+     * <code>ApplicationEventPublisher</code> instance for publishing events.
+     */
     private final ApplicationEventPublisher eventPublisher;
+
+    /**
+     * Calls the <code>ToolRepository</code> to retrieve tool information.
+     */
     private final ToolService toolService;
+
+    /**
+     * Calls the <code>ChargeRepository</code> to retrieve charge information.
+     */
     private final ChargeService chargeService;
+
+    /**
+     * Utility class for handling <code>LocalDate</code> operations.
+     */
     private final LocalDateUtil localDateUtil;
+
+    /**
+     * Flag to indicate if the application is shutting down.
+     */
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
+
+    /**
+     * Logger instance for logging messages.
+     */
     private Logger log = LoggerFactory.getLogger(CheckoutService.class);
 
     public CheckoutService(ApplicationEventPublisher eventPublisher,
@@ -40,38 +66,38 @@ public class CheckoutService {
         this.localDateUtil = localDateUtil;
     }
 
+    /**
+     * Sets the logger instance for the service.
+     *
+     * @param log The logger instance to set.
+     */
     public void setLogger(Logger log) {
         this.log = log;
     }
 
+    /**
+     * Initiates the checkout process.
+     *
+     * @param reader The <code>BufferedReader</code> instance for reading user input.
+     */
     public void checkout(BufferedReader reader) {
         try {
             while (!shutdownInitiated.get()) {
                 greetingPrompt();
 
-                String code = getInput(reader, "Enter tool code (type 'exit' to quit):");
-                if (code == null || shutdownInitiated.get()) {
-                    break;
-                }
+                String code = getStringInput(reader, "Enter tool code (type 'exit' to quit):");
+                if (code == null || shutdownInitiated.get()) { break; }
 
-                String rentalDays = getValidInput(reader, "How many days are you renting the tool for? (type 'exit' to quit)", 1, Integer.MAX_VALUE);
-                if (rentalDays == null || shutdownInitiated.get()) {
-                    break;
-                }
+                String rentalDays = getNumericInput(reader, "How many days are you renting the tool for? (type 'exit' to quit)", 1, Integer.MAX_VALUE);
+                if (rentalDays == null || shutdownInitiated.get()) { break; }
 
-                String discountPercentage = getValidInput(reader, "Enter discount percentage (type 'exit' to quit):", 0, 100);
-                if (discountPercentage == null || shutdownInitiated.get()) {
-                    break;
-                }
+                String discountPercentage = getNumericInput(reader, "Enter discount percentage (type 'exit' to quit):", 0, 100);
+                if (discountPercentage == null || shutdownInitiated.get()) { break; }
 
-                String checkoutDate = getInput(reader, "Enter checkout date (yyyy-MM-dd) (type 'exit' to quit):");
-                if (checkoutDate == null || shutdownInitiated.get()) {
-                    break;
-                }
+                String checkoutDate = getStringInput(reader, "Enter checkout date (yyyy-MM-dd) (type 'exit' to quit):");
+                if (checkoutDate == null || shutdownInitiated.get()) { break; }
 
-                if (shutdownInitiated.get()) {
-                    break;
-                }
+                if (shutdownInitiated.get()) { break; }
 
                 Tool tool = toolService.findToolByCode(code).orElse(null);
                 if (tool == null) {
@@ -119,12 +145,12 @@ public class CheckoutService {
                     .toolBrand(tool.getBrand())
                     .rentalDays(rentalDays)
                     .checkoutDate(checkoutDateFormatted)
-                    .dueDate(dueDateFormatted) // checkoutDate + rentalDays
-                    .dailyRentalCharge(String.valueOf(dailyCharge)) // Amount per day, specified by the tool type (call 'charge' table)
-                    .chargeDays(String.valueOf(chargeDays)) // Count of chargeable days, from day after checkout through and including due date, excluding "no charge" days as specified by the tool type
-                    .preDiscountCharge(preDiscountCharge) // chargeDays * dailyRentalCharge. Resulting total rounding half up to the nearest cent
+                    .dueDate(dueDateFormatted)
+                    .dailyRentalCharge(String.valueOf(dailyCharge))
+                    .chargeDays(String.valueOf(chargeDays))
+                    .preDiscountCharge(preDiscountCharge)
                     .discountPercent(discountPercentage)
-                    .discountAmount(discountAmount) // preDiscountCharge * discountPercentage. Rounded half up to the nearest cent.
+                    .discountAmount(discountAmount)
                     .finalCharge(String.valueOf(
                         BigDecimal.valueOf(Double.parseDouble(preDiscountCharge) - Double.parseDouble(discountAmount))
                             .setScale(2, RoundingMode.HALF_UP)
@@ -140,6 +166,9 @@ public class CheckoutService {
         }
     }
 
+    /**
+     * Displays the greeting prompt to the user.
+     */
     private void greetingPrompt() {
         log.info("=".repeat(60));
         log.info("{}Welcome to the Tool Rental Checkout System!{}", AnsiColor.GREEN, AnsiColor.RESET);
@@ -147,6 +176,17 @@ public class CheckoutService {
         log.info("=".repeat(60));
     }
 
+    /**
+     * Calculates the number of chargeable days for the rental period.
+     *
+     * @param rentalDays The number of days the tool is being rented.
+     * @param checkoutDate The date the tool is being checked out.
+     * @param dueDate The date the tool is due to be returned.
+     * @param weekdayCharge Whether to charge for weekdays.
+     * @param weekendCharge Whether to charge for weekends.
+     * @param holidayCharge Whether to charge for holidays.
+     * @return The number of days to charge for the rental period.
+     */
     private int getChargeDays(int rentalDays,
                               LocalDate checkoutDate,
                               LocalDate dueDate,
@@ -164,6 +204,13 @@ public class CheckoutService {
 
     }
 
+    /**
+     * Calculates the pre-discount charge for the rental period.
+     *
+     * @param chargeDays The number of days to charge for the rental period.
+     * @param dailyCharge The daily charge for the tool.
+     * @return The pre-discount charge for the rental period.
+     */
     private String getPreDiscountCharge(int chargeDays, double dailyCharge) {
         return String.valueOf(
             new BigDecimal(chargeDays * dailyCharge)
@@ -171,6 +218,13 @@ public class CheckoutService {
         );
     }
 
+    /**
+     * Calculates the discount amount for the rental period.
+     *
+     * @param preDiscountCharge The pre-discount charge for the rental period.
+     * @param discountPercentage The discount percentage to apply.
+     * @return The discount amount for the rental period.
+     */
     private String getDiscountAmount(double preDiscountCharge, double discountPercentage) {
         return String.valueOf(
             BigDecimal.valueOf(preDiscountCharge * (discountPercentage / 100))
@@ -178,7 +232,15 @@ public class CheckoutService {
         );
     }
 
-    private String getInput(BufferedReader reader, String prompt) throws IOException {
+    /**
+     * Prompts the user for input and returns the input as a <code>String</code>.
+     *
+     * @param reader The <code>BufferedReader</code> instance for reading user input.
+     * @param prompt The prompt to display to the user.
+     * @return The user input as a <code>String</code>.
+     * @throws IOException If an I/O error occurs.
+     */
+    private String getStringInput(BufferedReader reader, String prompt) throws IOException {
         while (!shutdownInitiated.get()) {
             log.info(prompt);
             String input = reader.readLine();
@@ -197,9 +259,19 @@ public class CheckoutService {
         return null;
     }
 
-    String getValidInput(BufferedReader reader, String prompt, int minValue, int maxValue) throws IOException {
+    /**
+     * Prompts the user for numeric input and returns the input as a <code>String</code>.
+     *
+     * @param reader The <code>BufferedReader</code> instance for reading user input.
+     * @param prompt The prompt to display to the user.
+     * @param minValue The minimum value allowed.
+     * @param maxValue The maximum value allowed.
+     * @return The user input as a <code>String</code>.
+     * @throws IOException If an I/O error occurs.
+     */
+    String getNumericInput(BufferedReader reader, String prompt, int minValue, int maxValue) throws IOException {
         while (!shutdownInitiated.get()) {
-            String input = getInput(reader, prompt);
+            String input = getStringInput(reader, prompt);
             if (input == null || "exit".equalsIgnoreCase(input.trim())) {
                 if (input != null && "exit".equalsIgnoreCase(input.trim())) {
                     eventPublisher.publishEvent(new ExitEvent(this));
