@@ -4,6 +4,9 @@ import com.toolrental.demo.event.ExitEvent;
 import com.toolrental.demo.model.Charge;
 import com.toolrental.demo.model.Tool;
 import com.toolrental.demo.testconfig.TestConfig;
+import com.toolrental.demo.util.ApplicationConstants.Brand;
+import com.toolrental.demo.util.ApplicationConstants.ToolCode;
+import com.toolrental.demo.util.ApplicationConstants.ToolType;
 import com.toolrental.demo.util.LocalDateUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,21 +51,28 @@ class CheckoutServiceTest {
     }
 
     @Test
-    void testGetValidInputValidRange() throws IOException {
-        StringReader input = new StringReader("5\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        String result = checkoutService.getNumericInput(reader, "Enter a number:", 1, 10);
-        Assertions.assertEquals("5", result);
+    void testGetNumericInputValidRange() throws IOException {
+        Assertions.assertEquals(
+            "5",
+            checkoutService.getNumericInput(
+                new BufferedReader(new StringReader("5\n")),
+                "Enter a number: (type 'exit' to quit)",
+                1,
+                10
+            )
+        );
     }
 
     @Test
-    void testGetValidInputInvalidRange() throws IOException {
-        StringReader input = new StringReader("15\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        String result = checkoutService.getNumericInput(reader, "Enter a number:", 1, 10);
-        Assertions.assertNull(result);
+    void testGetNumericInputInvalidRange() throws IOException {
+        Assertions.assertNull(
+            checkoutService.getNumericInput(
+                new BufferedReader(new StringReader("15\n")),
+                "Enter a number: (type 'exit' to quit)",
+                1,
+                10
+            )
+        );
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         Mockito.verify(loggerMock, Mockito.atLeastOnce())
@@ -71,12 +81,15 @@ class CheckoutServiceTest {
     }
 
     @Test
-    void testGetValidInputInvalidFormat() throws IOException {
-        StringReader input = new StringReader("abc\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        String result = checkoutService.getNumericInput(reader, "Enter a number:", 1, 10);
-        Assertions.assertNull(result);
+    void testGetNumericInputInvalidFormat() throws IOException {
+        Assertions.assertNull(
+            checkoutService.getNumericInput(
+                new BufferedReader(new StringReader("abc\n")),
+                "Enter a number: (type 'exit' to quit)",
+                1,
+                10
+            )
+        );
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         Mockito.verify(loggerMock, Mockito.atLeastOnce()).warn(captor.capture());
@@ -84,32 +97,51 @@ class CheckoutServiceTest {
     }
 
     @Test
-    void testGetValidInputExit() throws IOException {
-        StringReader input = new StringReader("exit\n");
-        BufferedReader reader = new BufferedReader(input);
+    void testGetNumericInputExit() throws IOException {
+        Assertions.assertNull(
+            checkoutService.getNumericInput(
+                new BufferedReader(new StringReader("exit\n")),
+                "Enter a number: (type 'exit' to quit)",
+                1,
+                10
+            )
+        );
+    }
 
-        String result = checkoutService.getNumericInput(reader, "Enter a number:", 1, 10);
-        Assertions.assertNull(result);
+    @Test
+    void testGetStringInputValidString() throws IOException {
+        String userInput = ToolCode.CHNS;
+        Assertions.assertEquals(
+            ToolCode.CHNS,
+            checkoutService.getStringInput(
+                new BufferedReader(new StringReader(userInput + "\n")),
+                "Enter tool code (type 'exit' to quit):"
+            )
+        );
+    }
 
-        Mockito.verify(eventPublisherMock, Mockito.times(1))
-            .publishEvent(ArgumentMatchers.any(ExitEvent.class));
+    @Test
+    void testGetStringInputEmptyString() throws IOException {
+        Assertions.assertNull(
+            checkoutService.getStringInput(
+                new BufferedReader(new StringReader("")),
+                "Enter tool code (type 'exit' to quit):"
+            )
+        );
     }
 
     @Test
     void testCheckoutWithEmptyInput() {
         Tool tool = new Tool();
-        tool.setCode("TL1");
-        tool.setType("TYPE1");
+        tool.setCode(ToolCode.CHNS);
+        tool.setType(ToolType.CHAINSAW);
 
         Charge charge = new Charge();
-        charge.setToolType("TYPE1");
+        charge.setToolType(ToolType.CHAINSAW);
         charge.setDailyCharge(1.99);
 
-        StringReader input = new StringReader("TL1\n\n5\n10\n2024-07-01\nexit\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        Mockito.when(toolServiceMock.findToolByCode("TL1")).thenReturn(Optional.of(tool));
-        Mockito.when(chargeServiceMock.findChargeByToolType("TYPE1")).thenReturn(Optional.of(charge));
+        Mockito.when(toolServiceMock.findToolByCode(ToolCode.CHNS)).thenReturn(Optional.of(tool));
+        Mockito.when(chargeServiceMock.findChargeByToolType(ToolType.CHAINSAW)).thenReturn(Optional.of(charge));
 
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
@@ -123,7 +155,9 @@ class CheckoutServiceTest {
             )
         ).thenReturn(1);
 
-        Assertions.assertDoesNotThrow(() -> checkoutService.checkout(reader));
+        Assertions.assertDoesNotThrow(() ->
+            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.CHNS + "\n\n5\n10\n2024-07-01\nexit\n")))
+        );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
             .publishEvent(ArgumentMatchers.any(ExitEvent.class));
@@ -132,18 +166,15 @@ class CheckoutServiceTest {
     @Test
     void testCheckoutWithInvalidRentalDays() {
         Tool tool = new Tool();
-        tool.setCode("TL1");
-        tool.setType("TYPE1");
+        tool.setCode(ToolCode.CHNS);
+        tool.setType(ToolType.CHAINSAW);
 
         Charge charge = new Charge();
-        charge.setToolType("TYPE1");
+        charge.setToolType(ToolType.CHAINSAW);
         charge.setDailyCharge(1.99);
 
-        StringReader input = new StringReader("TL1\nabc\n5\n10\n2024-07-01\nexit\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        Mockito.when(toolServiceMock.findToolByCode("TL1")).thenReturn(Optional.of(tool));
-        Mockito.when(chargeServiceMock.findChargeByToolType("TYPE1")).thenReturn(Optional.of(charge));
+        Mockito.when(toolServiceMock.findToolByCode(ToolCode.CHNS)).thenReturn(Optional.of(tool));
+        Mockito.when(chargeServiceMock.findChargeByToolType(ToolType.CHAINSAW)).thenReturn(Optional.of(charge));
 
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
@@ -157,7 +188,9 @@ class CheckoutServiceTest {
             )
         ).thenReturn(1);
 
-        Assertions.assertDoesNotThrow(() -> checkoutService.checkout(reader));
+        Assertions.assertDoesNotThrow(() ->
+            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.CHNS + "\nabc\n5\n10\n2024-07-01\nexit\n")))
+        );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
             .publishEvent(ArgumentMatchers.any(ExitEvent.class));
@@ -165,20 +198,11 @@ class CheckoutServiceTest {
 
     @Test
     void testCheckoutToolNotFound() {
-        ApplicationEventPublisher eventPublisherMock = Mockito.mock(ApplicationEventPublisher.class);
-        LocalDateUtil localDateUtilMock = Mockito.mock(LocalDateUtil.class);
-        ToolService toolServiceMock = Mockito.mock(ToolService.class);
-        ChargeService chargeServiceMock = Mockito.mock(ChargeService.class);
-        Logger loggerMock = Mockito.mock(Logger.class);
-        CheckoutService checkoutService = new CheckoutService(eventPublisherMock, toolServiceMock, chargeServiceMock, localDateUtilMock);
-        checkoutService.setLogger(loggerMock);
+        Mockito.when(toolServiceMock.findToolByCode(ToolCode.CHNS)).thenReturn(Optional.empty());
 
-        StringReader input = new StringReader("TL1\n5\n10\n2024-07-01\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        Mockito.when(toolServiceMock.findToolByCode("TL1")).thenReturn(Optional.empty());
-
-        Assertions.assertDoesNotThrow(() -> checkoutService.checkout(reader));
+        Assertions.assertDoesNotThrow(() ->
+            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.CHNS + "\n5\n10\n2024-07-01\n")))
+        );
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         Mockito.verify(loggerMock, Mockito.times(1)).warn(captor.capture());
@@ -187,25 +211,16 @@ class CheckoutServiceTest {
 
     @Test
     void testCheckoutChargeNotFound() {
-        ApplicationEventPublisher eventPublisherMock = Mockito.mock(ApplicationEventPublisher.class);
-        LocalDateUtil localDateUtilMock = Mockito.mock(LocalDateUtil.class);
-        ToolService toolServiceMock = Mockito.mock(ToolService.class);
-        ChargeService chargeServiceMock = Mockito.mock(ChargeService.class);
-        Logger loggerMock = Mockito.mock(Logger.class);
-        CheckoutService checkoutService = new CheckoutService(eventPublisherMock, toolServiceMock, chargeServiceMock, localDateUtilMock);
-        checkoutService.setLogger(loggerMock);
-
         Tool tool = new Tool();
-        tool.setCode("TL1");
-        tool.setType("TYPE1");
+        tool.setCode(ToolCode.CHNS);
+        tool.setType(ToolType.CHAINSAW);
 
-        StringReader input = new StringReader("TL1\n5\n10\n2024-07-01\n");
-        BufferedReader reader = new BufferedReader(input);
+        Mockito.when(toolServiceMock.findToolByCode(ToolCode.CHNS)).thenReturn(Optional.of(tool));
+        Mockito.when(chargeServiceMock.findChargeByToolType(ToolType.CHAINSAW)).thenReturn(Optional.empty());
 
-        Mockito.when(toolServiceMock.findToolByCode("TL1")).thenReturn(Optional.of(tool));
-        Mockito.when(chargeServiceMock.findChargeByToolType("TYPE1")).thenReturn(Optional.empty());
-
-        Assertions.assertDoesNotThrow(() -> checkoutService.checkout(reader));
+        Assertions.assertDoesNotThrow(() ->
+            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.CHNS + "\n5\n10\n2024-07-01\n")))
+        );
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         Mockito.verify(loggerMock, Mockito.times(1)).warn(captor.capture());
@@ -215,22 +230,19 @@ class CheckoutServiceTest {
     @Test
     void testCheckout_JAKR_090315_5Days_101PercentDiscount() {
         Tool tool = new Tool();
-        tool.setCode("JAKR");
-        tool.setType("Jackhammer");
-        tool.setBrand("Ridgid");
+        tool.setCode(ToolCode.JAKR);
+        tool.setType(ToolType.JACKHAMMER);
+        tool.setBrand(Brand.RIDGID);
 
         Charge charge = new Charge();
-        charge.setToolType("Jackhammer");
+        charge.setToolType(ToolType.JACKHAMMER);
         charge.setDailyCharge(2.99);
         charge.setWeekdayCharge(true);
         charge.setWeekendCharge(false);
         charge.setHolidayCharge(false);
 
-        StringReader input = new StringReader("JAKR\n5\n101\n2015-09-03\nexit\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        Mockito.when(toolServiceMock.findToolByCode("JAKR")).thenReturn(Optional.of(tool));
-        Mockito.when(chargeServiceMock.findChargeByToolType("Jackhammer")).thenReturn(Optional.of(charge));
+        Mockito.when(toolServiceMock.findToolByCode(ToolCode.JAKR)).thenReturn(Optional.of(tool));
+        Mockito.when(chargeServiceMock.findChargeByToolType(ToolType.JACKHAMMER)).thenReturn(Optional.of(charge));
         Mockito.when(
             localDateUtilMock.getNoChargeDays(
                 ArgumentMatchers.any(),
@@ -243,7 +255,9 @@ class CheckoutServiceTest {
 
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
-        Assertions.assertDoesNotThrow(() -> checkoutService.checkout(reader));
+        Assertions.assertDoesNotThrow(() ->
+            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.JAKR + "\n5\n101\n2015-09-03\nexit\n")))
+        );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
             .publishEvent(ArgumentMatchers.any(ExitEvent.class));
@@ -252,22 +266,19 @@ class CheckoutServiceTest {
     @Test
     void testCheckout_LADW_070220_3Days_10PercentDiscount() {
         Tool tool = new Tool();
-        tool.setCode("LADW");
-        tool.setType("Ladder");
-        tool.setBrand("Werner");
+        tool.setCode(ToolCode.LADW);
+        tool.setType(ToolType.LADDER);
+        tool.setBrand(Brand.Werner);
 
         Charge charge = new Charge();
-        charge.setToolType("Ladder");
+        charge.setToolType(ToolType.LADDER);
         charge.setDailyCharge(1.99);
         charge.setWeekdayCharge(true);
         charge.setWeekendCharge(true);
         charge.setHolidayCharge(false);
 
-        StringReader input = new StringReader("LADW\n3\n10\n2020-07-02\nexit\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        Mockito.when(toolServiceMock.findToolByCode("LADW")).thenReturn(Optional.of(tool));
-        Mockito.when(chargeServiceMock.findChargeByToolType("Ladder")).thenReturn(Optional.of(charge));
+        Mockito.when(toolServiceMock.findToolByCode(ToolCode.LADW)).thenReturn(Optional.of(tool));
+        Mockito.when(chargeServiceMock.findChargeByToolType(ToolType.LADDER)).thenReturn(Optional.of(charge));
         Mockito.when(
             localDateUtilMock.getNoChargeDays(
                 ArgumentMatchers.any(),
@@ -280,7 +291,9 @@ class CheckoutServiceTest {
 
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
-        Assertions.assertDoesNotThrow(() -> checkoutService.checkout(reader));
+        Assertions.assertDoesNotThrow(() ->
+            checkoutService.checkout(new BufferedReader(new StringReader("LADW\n3\n10\n2020-07-02\nexit\n")))
+        );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
             .publishEvent(ArgumentMatchers.any(ExitEvent.class));
@@ -289,22 +302,19 @@ class CheckoutServiceTest {
     @Test
     void testCheckout_CHNS_070215_5Days_25PercentDiscount() {
         Tool tool = new Tool();
-        tool.setCode("CHNS");
-        tool.setType("Chainsaw");
-        tool.setBrand("Stihl");
+        tool.setCode(ToolCode.CHNS);
+        tool.setType(ToolType.CHAINSAW);
+        tool.setBrand(Brand.STIHL);
 
         Charge charge = new Charge();
-        charge.setToolType("Chainsaw");
+        charge.setToolType(ToolType.CHAINSAW);
         charge.setDailyCharge(1.49);
         charge.setWeekdayCharge(true);
         charge.setWeekendCharge(false);
         charge.setHolidayCharge(true);
 
-        StringReader input = new StringReader("CHNS\n5\n25\n2015-07-02\nexit\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        Mockito.when(toolServiceMock.findToolByCode("CHNS")).thenReturn(Optional.of(tool));
-        Mockito.when(chargeServiceMock.findChargeByToolType("Chainsaw")).thenReturn(Optional.of(charge));
+        Mockito.when(toolServiceMock.findToolByCode(ToolCode.CHNS)).thenReturn(Optional.of(tool));
+        Mockito.when(chargeServiceMock.findChargeByToolType(ToolType.CHAINSAW)).thenReturn(Optional.of(charge));
         Mockito.when(
             localDateUtilMock.getNoChargeDays(
                 ArgumentMatchers.any(),
@@ -317,7 +327,9 @@ class CheckoutServiceTest {
 
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
-        Assertions.assertDoesNotThrow(() -> checkoutService.checkout(reader));
+        Assertions.assertDoesNotThrow(() ->
+            checkoutService.checkout(new BufferedReader(new StringReader("CHNS\n5\n25\n2015-07-02\nexit\n")))
+        );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
             .publishEvent(ArgumentMatchers.any(ExitEvent.class));
@@ -326,22 +338,19 @@ class CheckoutServiceTest {
     @Test
     void testCheckout_JAKD_090315_6Days_0PercentDiscount() {
         Tool tool = new Tool();
-        tool.setCode("JAKD");
-        tool.setType("Jackhammer");
-        tool.setBrand("DeWalt");
+        tool.setCode(ToolCode.JAKD);
+        tool.setType(ToolType.JACKHAMMER);
+        tool.setBrand(Brand.DEWALT);
 
         Charge charge = new Charge();
-        charge.setToolType("Jackhammer");
+        charge.setToolType(ToolType.JACKHAMMER);
         charge.setDailyCharge(2.99);
         charge.setWeekdayCharge(true);
         charge.setWeekendCharge(false);
         charge.setHolidayCharge(false);
 
-        StringReader input = new StringReader("JAKD\n6\n0\n2015-09-03\nexit\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        Mockito.when(toolServiceMock.findToolByCode("JAKD")).thenReturn(Optional.of(tool));
-        Mockito.when(chargeServiceMock.findChargeByToolType("Jackhammer")).thenReturn(Optional.of(charge));
+        Mockito.when(toolServiceMock.findToolByCode(ToolCode.JAKD)).thenReturn(Optional.of(tool));
+        Mockito.when(chargeServiceMock.findChargeByToolType(ToolType.JACKHAMMER)).thenReturn(Optional.of(charge));
         Mockito.when(
             localDateUtilMock.getNoChargeDays(
                 ArgumentMatchers.any(),
@@ -354,7 +363,9 @@ class CheckoutServiceTest {
 
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
-        Assertions.assertDoesNotThrow(() -> checkoutService.checkout(reader));
+        Assertions.assertDoesNotThrow(() ->
+            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.JAKD + "\n6\n0\n2015-09-03\nexit\n")))
+        );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
             .publishEvent(ArgumentMatchers.any(ExitEvent.class));
@@ -363,22 +374,19 @@ class CheckoutServiceTest {
     @Test
     void testCheckout_JAKR_070215_9Days_0PercentDiscount() {
         Tool tool = new Tool();
-        tool.setCode("JAKR");
-        tool.setType("Jackhammer");
-        tool.setBrand("Ridgid");
+        tool.setCode(ToolCode.JAKR);
+        tool.setType(ToolType.JACKHAMMER);
+        tool.setBrand(Brand.RIDGID);
 
         Charge charge = new Charge();
-        charge.setToolType("Jackhammer");
+        charge.setToolType(ToolType.JACKHAMMER);
         charge.setDailyCharge(2.99);
         charge.setWeekdayCharge(true);
         charge.setWeekendCharge(false);
         charge.setHolidayCharge(false);
 
-        StringReader input = new StringReader("JAKR\n9\n0\n2015-07-02\nexit\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        Mockito.when(toolServiceMock.findToolByCode("JAKR")).thenReturn(Optional.of(tool));
-        Mockito.when(chargeServiceMock.findChargeByToolType("Jackhammer")).thenReturn(Optional.of(charge));
+        Mockito.when(toolServiceMock.findToolByCode(ToolCode.JAKR)).thenReturn(Optional.of(tool));
+        Mockito.when(chargeServiceMock.findChargeByToolType(ToolType.JACKHAMMER)).thenReturn(Optional.of(charge));
         Mockito.when(
             localDateUtilMock.getNoChargeDays(
                 ArgumentMatchers.any(),
@@ -391,7 +399,9 @@ class CheckoutServiceTest {
 
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
-        Assertions.assertDoesNotThrow(() -> checkoutService.checkout(reader));
+        Assertions.assertDoesNotThrow(() ->
+            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.JAKR + "\n9\n0\n2015-07-02\nexit\n")))
+        );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
             .publishEvent(ArgumentMatchers.any(ExitEvent.class));
@@ -400,22 +410,19 @@ class CheckoutServiceTest {
     @Test
     void testCheckout_JAKR_070220_4Days_50PercentDiscount() {
         Tool tool = new Tool();
-        tool.setCode("JAKR");
-        tool.setType("Jackhammer");
-        tool.setBrand("Ridgid");
+        tool.setCode(ToolCode.JAKR);
+        tool.setType(ToolType.JACKHAMMER);
+        tool.setBrand(Brand.RIDGID);
 
         Charge charge = new Charge();
-        charge.setToolType("Jackhammer");
+        charge.setToolType(ToolType.JACKHAMMER);
         charge.setDailyCharge(2.99);
         charge.setWeekdayCharge(true);
         charge.setWeekendCharge(false);
         charge.setHolidayCharge(false);
 
-        StringReader input = new StringReader("JAKR\n4\n50\n2020-07-02\nexit\n");
-        BufferedReader reader = new BufferedReader(input);
-
-        Mockito.when(toolServiceMock.findToolByCode("JAKR")).thenReturn(Optional.of(tool));
-        Mockito.when(chargeServiceMock.findChargeByToolType("Jackhammer")).thenReturn(Optional.of(charge));
+        Mockito.when(toolServiceMock.findToolByCode(ToolCode.JAKR)).thenReturn(Optional.of(tool));
+        Mockito.when(chargeServiceMock.findChargeByToolType(ToolType.JACKHAMMER)).thenReturn(Optional.of(charge));
         Mockito.when(
             localDateUtilMock.getNoChargeDays(
                 ArgumentMatchers.any(),
@@ -428,7 +435,9 @@ class CheckoutServiceTest {
 
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
-        Assertions.assertDoesNotThrow(() -> checkoutService.checkout(reader));
+        Assertions.assertDoesNotThrow(() ->
+            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.JAKR + "\n4\n50\n2020-07-02\nexit\n")))
+        );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
             .publishEvent(ArgumentMatchers.any(ExitEvent.class));

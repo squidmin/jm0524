@@ -3,6 +3,7 @@ package com.toolrental.demo.service;
 import com.toolrental.demo.model.Tool;
 import com.toolrental.demo.repository.ToolRepository;
 import com.toolrental.demo.testconfig.TestConfig;
+import com.toolrental.demo.util.ApplicationConstants.ToolCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,12 +33,12 @@ class ToolServiceTest {
     @Test
     void testFindToolByCode() {
         Tool tool = new Tool();
-        tool.setCode("TL1");
-        when(toolRepositoryMock.findByCode("TL1")).thenReturn(Optional.of(tool));
+        tool.setCode(ToolCode.LADW);
+        when(toolRepositoryMock.findByCode(ToolCode.LADW)).thenReturn(Optional.of(tool));
 
-        Optional<Tool> result = toolService.findToolByCode("TL1");
+        Optional<Tool> result = toolService.findToolByCode(ToolCode.LADW);
         assertTrue(result.isPresent());
-        assertEquals("TL1", result.get().getCode());
+        assertEquals(ToolCode.LADW, result.get().getCode());
     }
 
 }

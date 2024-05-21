@@ -1,5 +1,8 @@
 package com.toolrental.demo;
 
+import com.toolrental.demo.service.ChargeService;
+import com.toolrental.demo.service.CheckoutService;
+import com.toolrental.demo.service.ToolService;
 import com.toolrental.demo.testconfig.TestConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +18,17 @@ class Jm0524ApplicationTests {
     @Autowired
     private TestConfig testConfig;
 
+    @Autowired
+    private ToolService toolService;
+
+    @Autowired
+    private ChargeService chargeService;
+
+    @Autowired
+    private CheckoutService checkoutService;
+
     @Test
     void contextLoads() {
-        // This test ensures that the Spring application context loads successfully
     }
 
 }

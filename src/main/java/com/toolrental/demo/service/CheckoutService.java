@@ -163,6 +163,17 @@ public class CheckoutService {
             throw new RuntimeException(e);
         } finally {
             log.info("Exiting application...");
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    log.error("Error closing BufferedReader", e);
+                }
+            }
+            if (eventPublisher != null) {
+                eventPublisher.publishEvent(new ExitEvent(this));
+                shutdownInitiated.set(true);
+            }
         }
     }
 
@@ -240,13 +251,12 @@ public class CheckoutService {
      * @return The user input as a <code>String</code>.
      * @throws IOException If an I/O error occurs.
      */
-    private String getStringInput(BufferedReader reader, String prompt) throws IOException {
+    String getStringInput(BufferedReader reader, String prompt) throws IOException {
         while (!shutdownInitiated.get()) {
             log.info(prompt);
             String input = reader.readLine();
             if (input == null || "exit".equalsIgnoreCase(input.trim())) {
                 if (input != null && "exit".equalsIgnoreCase(input.trim())) {
-                    eventPublisher.publishEvent(new ExitEvent(this));
                     shutdownInitiated.set(true);
                 }
                 return null;
@@ -274,7 +284,6 @@ public class CheckoutService {
             String input = getStringInput(reader, prompt);
             if (input == null || "exit".equalsIgnoreCase(input.trim())) {
                 if (input != null && "exit".equalsIgnoreCase(input.trim())) {
-                    eventPublisher.publishEvent(new ExitEvent(this));
                     shutdownInitiated.set(true);
                 }
                 return null;
