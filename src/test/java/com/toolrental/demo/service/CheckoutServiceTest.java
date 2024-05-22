@@ -46,7 +46,12 @@ class CheckoutServiceTest {
         eventPublisherMock = Mockito.mock(ApplicationEventPublisher.class);
         localDateUtilMock = Mockito.mock(LocalDateUtil.class);
         loggerMock = Mockito.mock(Logger.class);
-        checkoutService = new CheckoutService(eventPublisherMock, toolServiceMock, chargeServiceMock, localDateUtilMock);
+        checkoutService = new CheckoutService(
+            eventPublisherMock,
+            toolServiceMock,
+            chargeServiceMock,
+            localDateUtilMock
+        );
         checkoutService.setLogger(loggerMock);
     }
 
@@ -156,7 +161,11 @@ class CheckoutServiceTest {
         ).thenReturn(1);
 
         Assertions.assertDoesNotThrow(() ->
-            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.CHNS + "\n\n5\n10\n2024-07-01\nexit\n")))
+            checkoutService.checkout(
+                new BufferedReader(
+                    new StringReader(ToolCode.CHNS + "\n\n5\n10\n2024-07-01\nexit\n")
+                )
+            )
         );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
@@ -189,7 +198,11 @@ class CheckoutServiceTest {
         ).thenReturn(1);
 
         Assertions.assertDoesNotThrow(() ->
-            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.CHNS + "\nabc\n5\n10\n2024-07-01\nexit\n")))
+            checkoutService.checkout(
+                new BufferedReader(
+                    new StringReader(ToolCode.CHNS + "\nabc\n5\n10\n2024-07-01\nexit\n")
+                )
+            )
         );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
@@ -201,7 +214,11 @@ class CheckoutServiceTest {
         Mockito.when(toolServiceMock.findToolByCode(ToolCode.CHNS)).thenReturn(Optional.empty());
 
         Assertions.assertDoesNotThrow(() ->
-            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.CHNS + "\n5\n10\n2024-07-01\n")))
+            checkoutService.checkout(
+                new BufferedReader(
+                    new StringReader(ToolCode.CHNS + "\n5\n10\n2024-07-01\n")
+                )
+            )
         );
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
@@ -219,7 +236,11 @@ class CheckoutServiceTest {
         Mockito.when(chargeServiceMock.findChargeByToolType(ToolType.CHAINSAW)).thenReturn(Optional.empty());
 
         Assertions.assertDoesNotThrow(() ->
-            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.CHNS + "\n5\n10\n2024-07-01\n")))
+            checkoutService.checkout(
+                new BufferedReader(
+                    new StringReader(ToolCode.CHNS + "\n5\n10\n2024-07-01\n")
+                )
+            )
         );
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
@@ -256,7 +277,11 @@ class CheckoutServiceTest {
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
         Assertions.assertDoesNotThrow(() ->
-            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.JAKR + "\n5\n101\n2015-09-03\nexit\n")))
+            checkoutService.checkout(
+                new BufferedReader(
+                    new StringReader(ToolCode.JAKR + "\n5\n101\n2015-09-03\nexit\n")
+                )
+            )
         );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
@@ -292,7 +317,11 @@ class CheckoutServiceTest {
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
         Assertions.assertDoesNotThrow(() ->
-            checkoutService.checkout(new BufferedReader(new StringReader("LADW\n3\n10\n2020-07-02\nexit\n")))
+            checkoutService.checkout(
+                new BufferedReader(
+                    new StringReader(ToolCode.LADW + "\n3\n10\n2020-07-02\nexit\n")
+                )
+            )
         );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
@@ -328,7 +357,11 @@ class CheckoutServiceTest {
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
         Assertions.assertDoesNotThrow(() ->
-            checkoutService.checkout(new BufferedReader(new StringReader("CHNS\n5\n25\n2015-07-02\nexit\n")))
+            checkoutService.checkout(
+                new BufferedReader(
+                    new StringReader(ToolCode.CHNS + "\n5\n25\n2015-07-02\nexit\n")
+                )
+            )
         );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
@@ -364,7 +397,11 @@ class CheckoutServiceTest {
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
         Assertions.assertDoesNotThrow(() ->
-            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.JAKD + "\n6\n0\n2015-09-03\nexit\n")))
+            checkoutService.checkout(
+                new BufferedReader(
+                    new StringReader(ToolCode.JAKD + "\n6\n0\n2015-09-03\nexit\n")
+                )
+            )
         );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
@@ -400,7 +437,11 @@ class CheckoutServiceTest {
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
         Assertions.assertDoesNotThrow(() ->
-            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.JAKR + "\n9\n0\n2015-07-02\nexit\n")))
+            checkoutService.checkout(
+                new BufferedReader(
+                    new StringReader(ToolCode.JAKR + "\n9\n0\n2015-07-02\nexit\n")
+                )
+            )
         );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
@@ -436,7 +477,11 @@ class CheckoutServiceTest {
         Mockito.doNothing().when(eventPublisherMock).publishEvent(ArgumentMatchers.any(ExitEvent.class));
 
         Assertions.assertDoesNotThrow(() ->
-            checkoutService.checkout(new BufferedReader(new StringReader(ToolCode.JAKR + "\n4\n50\n2020-07-02\nexit\n")))
+            checkoutService.checkout(
+                new BufferedReader(
+                    new StringReader(ToolCode.JAKR + "\n4\n50\n2020-07-02\nexit\n")
+                )
+            )
         );
 
         Mockito.verify(eventPublisherMock, Mockito.times(1))
